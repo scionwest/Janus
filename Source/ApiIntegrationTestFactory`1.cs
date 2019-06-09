@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -16,8 +17,20 @@ namespace Janus
 
     public class ApiIntegrationTestFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
     {
-        private readonly string userSecretId;
+        private const string DefaultDatabaseKey = "Initial Catalog";
+
+        private readonly string connectionStringDatabaseKey;
         private List<TestDatabaseConfiguration> contexts = new List<TestDatabaseConfiguration>();
+
+        public ApiIntegrationTestFactory() : this(DefaultDatabaseKey)
+        { }
+
+        public ApiIntegrationTestFactory(string connectionStringDatabaseKey)
+        {
+            this.connectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
+                ? DefaultDatabaseKey
+                : connectionStringDatabaseKey;
+        }
 
         public ApiIntegrationTestFactory<TStartup> RetainDatabase<TContext>() where TContext : DbContext
         {
@@ -28,7 +41,10 @@ namespace Janus
             return this;
         }
 
-        public DbContextSeedBuilder<TContext> ForDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
+        public DbContextSeedBuilder<TContext> WithDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
+            => this.WithDataContext<TContext>(configurationConnectionStringKey, this.connectionStringDatabaseKey, executingTest);
+
+        public DbContextSeedBuilder<TContext> WithDataContext<TContext>(string configurationConnectionStringKey, string connectionStringDatabaseKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
         {
             var dbConfig = new TestDatabaseConfiguration
             {
@@ -36,6 +52,11 @@ namespace Janus
                 DbContextType = typeof(TContext),
                 ExecutingTest = executingTest,
             };
+
+            // If this specific DBContext can't use the Factory database key, then we use the DBContext specific key.
+            dbConfig.ConnectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
+                ? this.connectionStringDatabaseKey
+                : connectionStringDatabaseKey;
 
             var seedBuilder = new DbContextSeedBuilder<TContext>(dbConfig);
             dbConfig.SeedBuilder = seedBuilder;
@@ -47,7 +68,7 @@ namespace Janus
         {
             foreach (TestDatabaseConfiguration dbConfig in this.contexts)
             {
-                this.RenameConnectionStringDatabase(builder, dbConfig.ConfigurationConnectionStringKey);
+                this.RenameConnectionStringDatabase(builder, dbConfig);
             }
 
             TestServer server = base.CreateServer(builder);
@@ -72,16 +93,6 @@ namespace Janus
         protected override IWebHostBuilder CreateWebHostBuilder()
         {
             IWebHostBuilder builder = base.CreateWebHostBuilder();
-            builder.ConfigureAppConfiguration(configBuilder =>
-            {
-                if (string.IsNullOrEmpty(this.userSecretId))
-                {
-                    return;
-                }
-
-                configBuilder.AddUserSecrets(this.userSecretId);
-            });
-
             builder.ConfigureServices(services =>
             {
                 services.AddSingleton<DataContextSeeder>();
@@ -111,38 +122,64 @@ namespace Janus
             base.Dispose(disposing);
         }
 
-        protected virtual void RenameConnectionStringDatabase(IWebHostBuilder hostBuilder, string configurationConnectionStringKey)
+        protected virtual void RenameConnectionStringDatabase(IWebHostBuilder hostBuilder, TestDatabaseConfiguration databaseConfiguration)
         {
             hostBuilder.ConfigureAppConfiguration((hostContext, configBuilder) =>
             {
                 IConfiguration configuration = configBuilder.Build();
-                string connectionString = configuration.GetConnectionString(configurationConnectionStringKey);
+                string connectionString = configuration.GetConnectionString(databaseConfiguration.ConfigurationConnectionStringKey);
 
                 string timeStamp = DateTime.Now.ToString("HHmmss.fff");
-                string dbName = this.GetDatabaseNameFromConnectionString(connectionString);
+                string dbName = this.GetDatabaseNameFromConnectionString(connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
                 string newDbName = $"Tests-{dbName}-{timeStamp}";
-                connectionString = this.ReplaceDatabaseNameOnConnectionString(newDbName, connectionString);
+                connectionString = this.ReplaceDatabaseNameOnConnectionString(newDbName, connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
 
                 var connectionStringConfig = new Dictionary<string, string>()
                 {
-                    { configurationConnectionStringKey, connectionString }
+                    { databaseConfiguration.ConfigurationConnectionStringKey, connectionString }
                 };
 
                 configBuilder.AddInMemoryCollection(connectionStringConfig);
             });
         }
 
-        protected virtual string GetDatabaseNameFromConnectionString(string connectionString)
+        protected virtual string GetDatabaseNameFromConnectionString(string connectionString, string connectionStringDatabaseKey)
         {
-            var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-            return connectionStringBuilder.InitialCatalog;
+            Dictionary<string, string> connectionStringParts = this.GetConnectionStringParts(connectionString);
+            if (connectionStringParts.TryGetValue(connectionStringDatabaseKey, out string key))
+            {
+                return connectionStringParts[connectionStringDatabaseKey];
+            }
+
+            throw new KeyNotFoundException($"The connection string database key of {connectionStringDatabaseKey} does not exist in the connection string.");
         }
 
-        protected virtual string ReplaceDatabaseNameOnConnectionString(string newDbName, string connectionString)
+        protected virtual string ReplaceDatabaseNameOnConnectionString(string newDbName, string connectionString, string connectionStringDatabaseKey)
         {
-            var connectionStringBuilder = new SqlConnectionStringBuilder(connectionString);
-            connectionStringBuilder.InitialCatalog = newDbName;
+            Dictionary<string, string> connectionStringParts = this.GetConnectionStringParts(connectionString);
+            if (!connectionStringParts.TryGetValue(connectionStringDatabaseKey, out string key))
+            {
+                throw new KeyNotFoundException($"The connection string database key of {connectionStringDatabaseKey} does not exist in the connection string.");
+            }
+
+            connectionStringParts[connectionStringDatabaseKey] = newDbName;
+
+            var connectionStringBuilder = new DbConnectionStringBuilder();
+            foreach(KeyValuePair<string, string> element in connectionStringParts)
+            {
+                connectionStringBuilder[element.Key] = element.Value;
+            }
+
             return connectionStringBuilder.ToString();
+        }
+
+        private Dictionary<string, string> GetConnectionStringParts(string connectionString)
+        {
+            Dictionary<string, string> connectionStringParts = connectionString.Split(';')
+                .Select(element => element.Split(new char[] { '=' }, 2))
+                .ToDictionary(element => element[0].Trim(), element => element[1].Trim(), StringComparer.InvariantCultureIgnoreCase);
+
+            return connectionStringParts;
         }
     }
 }
