@@ -14,7 +14,9 @@ namespace AspNetCore.IntegrationTestSeeding
             // Arrange
             var factory = new IntegrationTestSeedFactory<AppDbContext>()
                 .ForDataContext<AppDbContext>("Default")
-                .WithSeedData<AppDbContext><EmployeeSeeder>();
+                .WithSeedData<AppDbContext>(context =>
+                {
+                });
 
             var client = factory.CreateClient();
 
