@@ -14,25 +14,37 @@ namespace Janus
     [TestClass]
     public class UnitTest1
     {
+        private Faker dataFaker;
+        private ApiIntegrationTestFactory<Startup> testFactory;
+
+        [TestInitialize]
+        public void Initialize()
+        {
+            this.dataFaker = new Faker();
+            this.testFactory = new ApiIntegrationTestFactory<Startup>("DataSource");
+        }
+
+        [TestCleanup]
+        public void Cleanup() => this.testFactory.Dispose();
+
         [TestMethod]
         public async Task TestMethod1()
         {
             // Arrange
-            var faker = new Faker();
             var users = new UserEntity[]
             {
-                new UserEntity { Address = faker.Address.FullAddress(), Email = faker.Internet.Email(), Username = faker.Internet.UserName() },
-                new UserEntity { Address = faker.Address.FullAddress(), Email = faker.Internet.Email(), Username = faker.Internet.UserName() }
+                new UserEntity { Address = this.dataFaker.Address.FullAddress(), Email = this.dataFaker.Internet.Email(), Username = this.dataFaker.Internet.UserName() },
+                new UserEntity { Address = this.dataFaker.Address.FullAddress(), Email = this.dataFaker.Internet.Email(), Username = this.dataFaker.Internet.UserName() }
             };
-            var factory = new ApiIntegrationTestFactory<Startup>("DataSource");
-            factory.WithDataContext<AppDbContext>("Default")
+
+            this.testFactory.WithDataContext<AppDbContext>("Default")
                 .WithSeedData(context =>
                 {
                     context.Users.AddRange(users);
                     context.SaveChanges();
                 });
 
-            var client = factory.CreateClient();
+            var client = this.testFactory.CreateClient();
 
             // Act
             HttpResponseMessage response = await client.GetAsync("api/users");
@@ -48,15 +60,12 @@ namespace Janus
         public async Task TestMethod2()
         {
             // Arrange
-            var faker = new Faker();
-
-            var factory = new ApiIntegrationTestFactory<Startup>("DataSource");
-            factory.WithDataContext<AppDbContext>("Default")
+            this.testFactory.WithDataContext<AppDbContext>("Default")
                 .WithSeedData<UserEntitySeeder>()
                 .WithSeedData<TaskEntitySeeder>();
 
-            var client = factory.CreateClient();
-            IEntitySeeder userSeeder = factory.GetSeedData<AppDbContext, UserEntitySeeder>();
+            var client = testFactory.CreateClient();
+            IEntitySeeder userSeeder = testFactory.GetDataContextSeedData<AppDbContext, UserEntitySeeder>();
 
             // Act
             HttpResponseMessage response = await client.GetAsync("api/users");
