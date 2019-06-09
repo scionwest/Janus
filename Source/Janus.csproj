@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>AspNetCore.IntegrationTestSeeding</AssemblyName>
-    <RootNamespace>AspNetCore.IntegrationTestSeeding</RootNamespace>
+    <AssemblyName>Janus</AssemblyName>
+    <RootNamespace>Janus</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

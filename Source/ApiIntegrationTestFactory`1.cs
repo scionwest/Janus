@@ -1,25 +1,25 @@
-﻿using Microsoft.AspNetCore.Hosting;
+﻿using Janus.Seeding;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace AspNetCore.IntegrationTestSeeding
+namespace Janus
 {
-    public class IntegrationTestSeedFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
+
+    public class ApiIntegrationTestFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
     {
         private readonly string userSecretId;
         private List<TestDatabaseConfiguration> contexts = new List<TestDatabaseConfiguration>();
 
-        public IntegrationTestSeedFactory(string userSecretId) => this.userSecretId = userSecretId;
-        public IntegrationTestSeedFactory() { }
-
-        public IntegrationTestSeedFactory<TStartup> RetainDatabase<TContext>() where TContext : DbContext
+        public ApiIntegrationTestFactory<TStartup> RetainDatabase<TContext>() where TContext : DbContext
         {
             TestDatabaseConfiguration dbConfig = this.contexts.FirstOrDefault(config => config.DbContextType == typeof(TContext));
             if (dbConfig == null) return this;
@@ -28,7 +28,7 @@ namespace AspNetCore.IntegrationTestSeeding
             return this;
         }
 
-        public IntegrationTestSeedFactory<TStartup> ForDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "")
+        public DbContextSeedBuilder<TContext> ForDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
         {
             var dbConfig = new TestDatabaseConfiguration
             {
@@ -37,22 +37,15 @@ namespace AspNetCore.IntegrationTestSeeding
                 ExecutingTest = executingTest,
             };
 
+            var seedBuilder = new DbContextSeedBuilder<TContext>(dbConfig);
+            dbConfig.SeedBuilder = seedBuilder;
             this.contexts.Add(dbConfig);
-            return this;
-        }
-
-        public IntegrationTestSeedFactory<TStartup> WithSeedData<TContext>(Action<TContext> seeder) where TContext : DbContext
-        {
-            TestDatabaseConfiguration dbConfig = this.contexts.FirstOrDefault(config => config.DbContextType == typeof(TContext));
-            if (dbConfig == null) return this;
-
-            dbConfig.DatabaseSeeder = seeder;
-            return this;
+            return seedBuilder;
         }
 
         protected override TestServer CreateServer(IWebHostBuilder builder)
         {
-            foreach(TestDatabaseConfiguration dbConfig in this.contexts)
+            foreach (TestDatabaseConfiguration dbConfig in this.contexts)
             {
                 this.RenameConnectionStringDatabase(builder, dbConfig.ConfigurationConnectionStringKey);
             }
@@ -63,6 +56,13 @@ namespace AspNetCore.IntegrationTestSeeding
             {
                 DbContext context = (DbContext)server.Host.Services.GetService(dbConfig.DbContextType);
                 context.Database.EnsureCreated();
+
+                // Resolve a context seeder and seed the database with the individual seeders
+                IDataContextSeeder contextSeeder = server.Host.Services.GetRequiredService<IDataContextSeeder>();
+                contextSeeder.SeedDataContext(context);
+
+                // Always run the callback seeder last so that individual tests have the ability to replace data
+                // inserted via seeders.
                 dbConfig.DatabaseSeeder?.DynamicInvoke(context);
             }
             return server;
@@ -80,6 +80,11 @@ namespace AspNetCore.IntegrationTestSeeding
                 }
 
                 configBuilder.AddUserSecrets(this.userSecretId);
+            });
+
+            builder.ConfigureServices(services =>
+            {
+                services.AddSingleton<DataContextSeeder>();
             });
             return builder;
         }

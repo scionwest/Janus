@@ -3,7 +3,7 @@ using System.Net;
 using System.Threading.Tasks;
 using WebApplication1;
 
-namespace AspNetCore.IntegrationTestSeeding
+namespace Janus
 {
     [TestClass]
     public class UnitTest1
@@ -12,11 +12,7 @@ namespace AspNetCore.IntegrationTestSeeding
         public async Task TestMethod1()
         {
             // Arrange
-            var factory = new IntegrationTestSeedFactory<AppDbContext>()
-                .ForDataContext<AppDbContext>("Default")
-                .WithSeedData<AppDbContext>(context =>
-                {
-                });
+            var factory = new ApiIntegrationTestFactory<Startup>();
 
             var client = factory.CreateClient();
 

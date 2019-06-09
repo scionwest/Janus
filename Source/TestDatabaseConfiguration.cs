@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AspNetCore.IntegrationTestSeeding
+namespace Janus
 {
     internal class TestDatabaseConfiguration
     {
@@ -9,5 +9,6 @@ namespace AspNetCore.IntegrationTestSeeding
         internal bool RetainDatabase { get; set; }
         internal string ExecutingTest { get; set; }
         internal Delegate DatabaseSeeder { get; set; }
+        internal DbContextSeedBuilder SeedBuilder { get; set; }
     }
 }
