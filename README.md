@@ -1,4 +1,4 @@
-[![Downloads](https://img.shields.io/nuget/dt/Bogus.svg)](https://www.nuget.org/packages/Janus/)
+[![Downloads](https://img.shields.io/nuget/dt/Janus.svg)](https://www.nuget.org/packages/Janus/)
 
 # Janus Database Seeder for .NET
 
