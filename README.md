@@ -128,7 +128,7 @@ The {timestamp} value is replaced with an actual time stamp for when the databas
 ### Seeding the database
 We can seed the database inline, within each test. This is the quickest and easiest approach.
 
-```
+```c#
 [TestMethod]
 public async Task GetUsers_ReturnsFakeUsers()
 {
