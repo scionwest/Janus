@@ -11,6 +11,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Janus.Test")]
+
 namespace Janus
 {
     public class ApiIntegrationTestFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class

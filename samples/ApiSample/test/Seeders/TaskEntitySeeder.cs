@@ -2,7 +2,6 @@
 using Janus.Seeding;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using WebApplication1;
 
 namespace AspNetCore.IntegrationTestSeeding
