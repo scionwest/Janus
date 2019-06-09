@@ -342,3 +342,53 @@ this.testFactory.WithDataContext<AppDbContext>("Default")
     .RetainDatabase()
     .WithSeedData<UserEntitySeeder>();
 ```
+
+## Extending ApiIntegrationTestFactory
+The factory can be extended to fit the needs of the developers in most cases.
+
+### CreateDatabase
+You can override the `CreateDatabase` method and do work before and after your database is provisioned.
+
+> This is not the place to do data seeding/querying.
+
+```c#
+protected virtual void CreateDatabase(TestDatabaseConfiguration configuration, DbContext context)
+{
+    context.Database.EnsureCreated();
+}
+```
+
+### SeedDatabase
+The `SeedDatabase` method is responsible for seeding the created database. This will get called after a successful call to `CreateDatabase`.
+
+The Janus implementation sets up the `IEntitySeeder` and `IDataContextSeeder` implementations to perform database seeding. It will also invoke the callback delegate provided when using the inline test seeding API.
+
+If you override and replace this functionality, you will want to make sure you honor both the `WithSeedData<T>()` and `WithSeedData(Action<TContext>)` API needs. Janus chooses to seed the database with the data seeders first, followed by the inline delegate callbacks. This allows each integration test to override a seeders data, deleting it, mutating it or adding to it as needed per test.
+
+```c#
+protected virtual void SeedDatabase(TestServer server, TestDatabaseConfiguration databaseConfiguration, DbContext dbContext)
+{
+    // Resolve a context seeder and seed the database with the individual seeders
+    IDataContextSeeder contextSeeder = server.Host.Services.GetRequiredService<IDataContextSeeder>();
+    IEntitySeeder[] entitySeeders = databaseConfiguration.SeedBuilder.GetEntitySeeders();
+    contextSeeder.SeedDataContext(dbContext, entitySeeders);
+
+    // Always run the callback seeder last so that individual tests have the ability to replace data
+    // inserted via seeders.
+    databaseConfiguration.DatabaseSeeder?.DynamicInvoke(dbContext);
+}
+```
+
+### Database Name for Test
+You can override the `CreateDatabaseNameForTest` method and use your own naming convention for your databases.
+
+The default implementation looks like the following.
+
+```c#
+protected virtual string CreateDatabaseNameForTest(string initialDatabaseName)
+{
+    string timeStamp = DateTime.Now.ToString("HHmmss.fff");
+    string newDbName = $"Tests-{initialDatabaseName}-{timeStamp}";
+    return newDbName;
+}
+```
