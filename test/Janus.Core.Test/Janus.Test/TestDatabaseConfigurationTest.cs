@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 
-namespace Janus.Test
+namespace Janus
 {
     [TestClass]
     public class TestDatabaseConfigurationTest

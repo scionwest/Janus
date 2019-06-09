@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
-    <UserSecretsId>IntegrationTestApp-779b8620-3874-4182-894c-a41def497c69</UserSecretsId>
+    <UserSecretsId>Janus-SampleApi-779b8620-3874-4182-894c-a41def497c69</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

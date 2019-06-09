@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace WebApplication1
+namespace Janus.SampleApi.Data
 {
     public class UserEntity
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace AspNetCore.IntegrationTestSeeding
+namespace Janus.SampleApi.Data
 {
     public class MockDbContext : DbContext
     {

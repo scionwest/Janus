@@ -1,7 +1,8 @@
 ﻿using Janus.Seeding;
+using Janus.Test;
 using System.Collections.Generic;
 
-namespace Janus.Test
+namespace Janus
 {
     public class MockSeeder : EntitySeeder<TestEntity>
     {

@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Janus.SampleApi.Data;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
-namespace WebApplication1.Controllers
+namespace Janus.SampleApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

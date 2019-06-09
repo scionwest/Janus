@@ -1,15 +1,12 @@
-using AspNetCore.IntegrationTestSeeding;
 using Bogus;
-using Janus.Seeding;
+using Janus.SampleApi.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using WebApplication1;
 
-namespace Janus
+namespace Janus.SampleApi
 {
     [TestClass]
     public class InlineDataSeedingTests

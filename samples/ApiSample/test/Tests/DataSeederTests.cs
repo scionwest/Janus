@@ -1,5 +1,5 @@
-using AspNetCore.IntegrationTestSeeding;
 using Bogus;
+using Janus.SampleApi.Data;
 using Janus.Seeding;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
@@ -7,9 +7,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using WebApplication1;
 
-namespace Janus
+namespace Janus.SampleApi
 {
     [TestClass]
     public class DataSeederTests

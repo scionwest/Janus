@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Janus.Test
+namespace Janus
 {
     public class TestEntity
     {

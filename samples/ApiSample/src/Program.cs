@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 
-namespace WebApplication1
+namespace Janus.SampleApi
 {
 
     public class Program

@@ -1,10 +1,10 @@
 ﻿using Bogus;
+using Janus.SampleApi.Data;
 using Janus.Seeding;
 using System;
 using System.Collections.Generic;
-using WebApplication1;
 
-namespace AspNetCore.IntegrationTestSeeding
+namespace Janus.SampleApi
 {
     public class TaskEntitySeeder : EntitySeeder<TaskEntity>
     {

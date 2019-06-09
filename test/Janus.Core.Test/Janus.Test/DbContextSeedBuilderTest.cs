@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
 
-namespace Janus.Test
+namespace Janus
 {
     [TestClass]
     public class DbContextSeedBuilderTest

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace WebApplication1
+namespace Janus.SampleApi.Data
 {
     public class AppDbContext : DbContext
     {
