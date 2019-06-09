@@ -4,6 +4,17 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Janus</AssemblyName>
     <RootNamespace>Janus</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0-beta-1.0</Version>
+    <Authors>Johnathon Sullinger</Authors>
+    <Company>ohnathon Sullinger</Company>
+    <Description>Provides per-integration test database provisioning and database seeding for projects that utilize Entity Framework Core.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/scionwest/Janus</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/scionwest/Janus</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>efcore aspnetcore dataseeding testing integration-test</PackageTags>
+    <PackageReleaseNotes>Provides the initial set of APIs for seeding databases and seeding them for projects that utilize Entity Framework Core</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

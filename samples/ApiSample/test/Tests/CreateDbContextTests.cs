@@ -18,9 +18,10 @@ namespace Janus.SampleApi
         {
             this.dataFaker = new Faker();
 
-            // Sqlite connection string uses "DataSource".
+            // Sqlite connection string uses "Data Source".
             // Replace with "Initial Catalog" for Sql Server or "database" for MySql.
-            this.testFactory = new ApiIntegrationTestFactory<Startup>("DataSource");
+            this.testFactory = new ApiIntegrationTestFactory<Startup>("Data Source")
+                .SetSolutionRelativeContentRoot("samples\\ApiSample\\src");
         }
 
         [TestCleanup]

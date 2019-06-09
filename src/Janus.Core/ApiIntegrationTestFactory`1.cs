@@ -19,6 +19,7 @@ namespace Janus
     {
         private const string DefaultDatabaseKey = "Initial Catalog";
 
+        private string solutionRelativeContentRoot = ".";
         private readonly string connectionStringDatabaseKey;
         private List<TestDatabaseConfiguration> databaseConfigurations = new List<TestDatabaseConfiguration>();
 
@@ -30,6 +31,12 @@ namespace Janus
             this.connectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
                 ? DefaultDatabaseKey
                 : connectionStringDatabaseKey;
+        }
+
+        public ApiIntegrationTestFactory<TStartup> SetSolutionRelativeContentRoot(string contentRoot = ".")
+        {
+            this.solutionRelativeContentRoot = contentRoot;
+            return this;
         }
 
         public IEntitySeeder GetDataContextSeedData<TContext, TEntitySeeder>() where TContext : DbContext where TEntitySeeder : IEntitySeeder
@@ -88,7 +95,7 @@ namespace Janus
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
-            builder.UseSolutionRelativeContentRoot(".");
+            builder.UseSolutionRelativeContentRoot(this.solutionRelativeContentRoot);
             base.ConfigureWebHost(builder);
         }
 
