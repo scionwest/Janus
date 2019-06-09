@@ -19,7 +19,7 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var entities = await this.Context.Users.ToArrayAsync();
+            var entities = await this.Context.Users.Include(user => user.Tasks).ToArrayAsync();
             return base.Ok(entities);
         }
 

@@ -20,7 +20,7 @@ namespace Janus
         private const string DefaultDatabaseKey = "Initial Catalog";
 
         private readonly string connectionStringDatabaseKey;
-        private List<TestDatabaseConfiguration> contexts = new List<TestDatabaseConfiguration>();
+        private List<TestDatabaseConfiguration> databaseConfigurations = new List<TestDatabaseConfiguration>();
 
         public ApiIntegrationTestFactory() : this(DefaultDatabaseKey)
         { }
@@ -34,11 +34,20 @@ namespace Janus
 
         public ApiIntegrationTestFactory<TStartup> RetainDatabase<TContext>() where TContext : DbContext
         {
-            TestDatabaseConfiguration dbConfig = this.contexts.FirstOrDefault(config => config.DbContextType == typeof(TContext));
+            TestDatabaseConfiguration dbConfig = this.databaseConfigurations.FirstOrDefault(config => config.DbContextType == typeof(TContext));
             if (dbConfig == null) return this;
 
             dbConfig.RetainDatabase = true;
             return this;
+        }
+
+        public IEntitySeeder GetSeedData<TContext, TEntitySeeder>() where TContext : DbContext where TEntitySeeder : IEntitySeeder
+        {
+            return this.databaseConfigurations
+                .First(config => config.DbContextType == typeof(TContext))
+                .SeedBuilder
+                .GetEntitySeeders()
+                .First(seeder => seeder.GetType() == typeof(TEntitySeeder));
         }
 
         public DbContextSeedBuilder<TContext> WithDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
@@ -60,31 +69,36 @@ namespace Janus
 
             var seedBuilder = new DbContextSeedBuilder<TContext>(dbConfig);
             dbConfig.SeedBuilder = seedBuilder;
-            this.contexts.Add(dbConfig);
+            this.databaseConfigurations.Add(dbConfig);
             return seedBuilder;
         }
 
         protected override TestServer CreateServer(IWebHostBuilder builder)
         {
-            foreach (TestDatabaseConfiguration dbConfig in this.contexts)
+            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
             {
                 this.RenameConnectionStringDatabase(builder, dbConfig);
             }
 
             TestServer server = base.CreateServer(builder);
 
-            foreach (TestDatabaseConfiguration dbConfig in this.contexts)
+            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
             {
-                DbContext context = (DbContext)server.Host.Services.GetService(dbConfig.DbContextType);
-                context.Database.EnsureCreated();
+                DbContext context;
+                using (IServiceScope serviceScope = server.Host.Services.CreateScope())
+                {
+                    context = (DbContext)serviceScope.ServiceProvider.GetService(dbConfig.DbContextType);
+                    context.Database.EnsureCreated();
 
-                // Resolve a context seeder and seed the database with the individual seeders
-                IDataContextSeeder contextSeeder = server.Host.Services.GetRequiredService<IDataContextSeeder>();
-                contextSeeder.SeedDataContext(context);
+                    // Resolve a context seeder and seed the database with the individual seeders
+                    IDataContextSeeder contextSeeder = server.Host.Services.GetRequiredService<IDataContextSeeder>();
+                    IEntitySeeder[] entitySeeders = dbConfig.SeedBuilder.GetEntitySeeders();
+                    contextSeeder.SeedDataContext(context, entitySeeders);
 
-                // Always run the callback seeder last so that individual tests have the ability to replace data
-                // inserted via seeders.
-                dbConfig.DatabaseSeeder?.DynamicInvoke(context);
+                    // Always run the callback seeder last so that individual tests have the ability to replace data
+                    // inserted via seeders.
+                    dbConfig.DatabaseSeeder?.DynamicInvoke(context);
+                }
             }
             return server;
 
@@ -95,7 +109,7 @@ namespace Janus
             IWebHostBuilder builder = base.CreateWebHostBuilder();
             builder.ConfigureServices(services =>
             {
-                services.AddSingleton<DataContextSeeder>();
+                services.AddSingleton<IDataContextSeeder, DataContextSeeder>();
             });
             return builder;
         }
@@ -108,7 +122,7 @@ namespace Janus
 
         protected override void Dispose(bool disposing)
         {
-            foreach (TestDatabaseConfiguration dbConfig in this.contexts)
+            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
             {
                 if (dbConfig.RetainDatabase)
                 {
@@ -128,15 +142,25 @@ namespace Janus
             {
                 IConfiguration configuration = configBuilder.Build();
                 string connectionString = configuration.GetConnectionString(databaseConfiguration.ConfigurationConnectionStringKey);
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = configuration[databaseConfiguration.ConfigurationConnectionStringKey];
+                }
 
                 string timeStamp = DateTime.Now.ToString("HHmmss.fff");
                 string dbName = this.GetDatabaseNameFromConnectionString(connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
                 string newDbName = $"Tests-{dbName}-{timeStamp}";
                 connectionString = this.ReplaceDatabaseNameOnConnectionString(newDbName, connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
+                string configKey = $"ConnectionStrings:{databaseConfiguration.ConfigurationConnectionStringKey}";
+
+                if (string.IsNullOrEmpty(configKey))
+                {
+                    configKey = databaseConfiguration.ConfigurationConnectionStringKey;
+                }
 
                 var connectionStringConfig = new Dictionary<string, string>()
                 {
-                    { databaseConfiguration.ConfigurationConnectionStringKey, connectionString }
+                    { configKey, connectionString }
                 };
 
                 configBuilder.AddInMemoryCollection(connectionStringConfig);
@@ -165,7 +189,7 @@ namespace Janus
             connectionStringParts[connectionStringDatabaseKey] = newDbName;
 
             var connectionStringBuilder = new DbConnectionStringBuilder();
-            foreach(KeyValuePair<string, string> element in connectionStringParts)
+            foreach (KeyValuePair<string, string> element in connectionStringParts)
             {
                 connectionStringBuilder[element.Key] = element.Value;
             }

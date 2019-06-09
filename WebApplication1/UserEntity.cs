@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace WebApplication1
 {
@@ -8,5 +9,7 @@ namespace WebApplication1
         public string Username { get; set; }
         public string Email { get; set; }
         public string Address { get; set; }
+
+        public List<TaskEntity> Tasks { get; set; } = new List<TaskEntity>();
     }
 }

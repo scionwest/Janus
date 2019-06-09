@@ -24,6 +24,8 @@ namespace Janus
 
         internal TestDatabaseConfiguration TestConfiguration { get; }
 
+        public IEntitySeeder[] GetEntitySeeders() => this.registeredSeeders.ToArray();
+
         public DbContextSeedBuilder WithSeedData<TSeeder>() where TSeeder : IEntitySeeder, new()
         {
             this.registeredSeeders.Add(new TSeeder());
