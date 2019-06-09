@@ -1,4 +1,4 @@
-[![Downloads](https://img.shields.io/nuget/dt/Bogus.svg)](https://www.nuget.org/packages/Bogus/)
+[![Downloads](https://img.shields.io/nuget/dt/Bogus.svg)](https://www.nuget.org/packages/Janus/)
 
 # Janus Database Seeder for .NET
 
@@ -298,3 +298,47 @@ var factory = new ApiIntegrationTestFactory<Startup>("Database");
 ```
 
 You can use any provider as long as they support a connection string that is simi-colon delimited with each element being a key/value pair separated by an `=` equals sign as shown in the examples in the above table.
+
+### Finding the Connection String
+In order for the factory to find the connection string, you have to tell it where it lives within the `IConfiguration` instance. By default, Janus will look inside of the `ConnectionStrings:` Section, meaning you only have to provide the sub-section.
+
+If you have the following configuration in `appsettings.json`, then this is how you would tell Janus where to find your connection string.
+
+```json
+{
+    "ConnectionStrings": {
+        "Default": "Server=localhost;Database=MyDatabase;"
+    }
+}
+```
+```c#
+testFactory.WithDataContext<AppDbContext>("Default")
+    .WithSeedData<UserEntitySeeder>()
+    .WithSeedData<TaskEntitySeeder>();
+```
+
+If you do not use the standard convention, storing your connection strings differently, then you need to provide Janus with the fully qualified path.
+
+```json
+{
+    "DataStores":{
+        "UserContext": {
+            "ConnectionString": "Server=localhost;Database=MyDatabase;"
+        }
+    }
+}
+```
+```c#
+testFactory.WithDataContext<AppDbContext>("DataStores:UserContext:ConnectionString")
+    .WithSeedData<UserEntitySeeder>()
+    .WithSeedData<TaskEntitySeeder>();
+```
+
+### Retaining databases
+If you have an integration test that fails and you want to look at the database to understand what the data looked like that caused the failure, you can tell Janus to retain your database.
+
+```c#
+this.testFactory.WithDataContext<AppDbContext>("Default")
+    .RetainDatabase()
+    .WithSeedData<UserEntitySeeder>();
+```
