@@ -7,7 +7,7 @@ namespace Janus
 {
     public class DbContextSeedBuilder
     {
-        private Dictionary<Type, IEntitySeeder> registeredSeeders = new Dictionary<Type, IEntitySeeder>();
+        private readonly Dictionary<Type, IEntitySeeder> registeredSeeders = new Dictionary<Type, IEntitySeeder>();
 
         internal DbContextSeedBuilder(TestDatabaseConfiguration databaseConfiguration)
         {
@@ -20,15 +20,31 @@ namespace Janus
         public IEntitySeeder[] GetEntitySeeders() 
             => this.registeredSeeders.Select(keyValue => keyValue.Value).ToArray();
 
+        public DbContextSeedBuilder WithSeedCollection<TCollection>() where TCollection : ISeederCollection, new()
+        {
+            TCollection collection = new TCollection();
+            foreach(Type seeder in collection.GetSeederTypes())
+            {
+                this.WithSeedData(seeder);
+            }
+            return this;
+        }
+
         public DbContextSeedBuilder WithSeedData<TSeeder>() where TSeeder : IEntitySeeder, new()
         {
-            if (this.registeredSeeders.ContainsKey(typeof(TSeeder)))
+            this.WithSeedData(typeof(TSeeder));
+            return this;
+        }
+
+        private void WithSeedData(Type seederType)
+        {
+            if (this.registeredSeeders.ContainsKey(seederType))
             {
-                return this;
+                return;
             }
 
-            this.registeredSeeders.Add(typeof(TSeeder), new TSeeder());
-            return this;
+            IEntitySeeder seeder = (IEntitySeeder)Activator.CreateInstance(seederType);
+            this.registeredSeeders.Add(seederType, seeder);
         }
     }
 }

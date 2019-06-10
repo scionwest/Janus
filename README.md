@@ -267,9 +267,84 @@ public async Task GetUsers_ReturnsSeederData()
 
 We can fetch the data we seeded, after the database has been created, and use that to verify that our API is still sending us back the right data. 
 
+For larger, more complicated, seeding setups you can aggregate seeders into `ISeederCollection` instances. Doing this will reduce your `WithSeedData` calls a lot if you find yourself having to register a lot of seeders. For instance, the following test registers a large number of seeders.
+
+```c#
+[TestMethod]
+public async Task GetUsers_ReturnsSeederData()
+{
+    // Arrange
+    this.testFactory.WithDataContext<AppDbContext>("Default")
+        .WithSeedData<UserEntitySeeder>()
+        .WithSeedData<TaskEntitySeeder>()
+        .WithSeedData<ProjectEntitySeeder>()
+        .WithSeedData<NoteEntitySeeder>()
+        .WithSeedData<AccountEntitySeeder>()
+        .WithSeedData<SubscriptionEntitySeeder>();
+
+    var client = testFactory.CreateClient();
+    IEntitySeeder userSeeder = testFactory.GetDataContextSeedData<AppDbContext, UserEntitySeeder>();
+
+    // Act
+    HttpResponseMessage response = await client.GetAsync("api/users");
+    string responseBody = await response.Content.ReadAsStringAsync();
+    UserEntity[] responseData = JsonConvert.DeserializeObject<UserEntity[]>(responseBody);
+
+
+    // Assert
+    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    Assert.AreEqual(userSeeder.GetSeedData().Length, responseData.Length);
+    Assert.IsTrue(responseData.Any(user => user.Tasks.Count > 0));
+}
+```
+
+If you need to register these seeders on multiple tests, it is worth the time to wrap them in a seeder collection.
+
+```c#
+public class UserTaskCollection : SeederCollection
+{
+    public UserTaskCollection()
+    {
+        this.AddSeeder<UserEntitySeeder>();
+        this.AddSeeder<TaskEntitySeeder>();
+        this.AddSeeder<ProjectEntitySeeder>();
+        this.AddSeeder<NoteEntitySeeder>();
+        this.AddSeeder<AccountEntitySeeder>();
+        this.AddSeeder<SubscriptionEntitySeeder>();
+    }
+}
+```
+
+Now you can just add the collection to your integration test.
+
+
+```c#
+[TestMethod]
+public async Task GetUsers_ReturnsSeederData()
+{
+    // Arrange
+    this.testFactory.WithDataContext<AppDbContext>("Default")
+        .WithSeederCollection<UserTaskCollection>();
+
+    var client = testFactory.CreateClient();
+    IEntitySeeder userSeeder = testFactory.GetDataContextSeedData<AppDbContext, UserEntitySeeder>();
+
+    // Act
+    HttpResponseMessage response = await client.GetAsync("api/users");
+    string responseBody = await response.Content.ReadAsStringAsync();
+    UserEntity[] responseData = JsonConvert.DeserializeObject<UserEntity[]>(responseBody);
+
+
+    // Assert
+    Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+    Assert.AreEqual(userSeeder.GetSeedData().Length, responseData.Length);
+    Assert.IsTrue(responseData.Any(user => user.Tasks.Count > 0));
+}
+```
+
 ## Configuring the Factory
 ### Root Content Path
-The factory is configured by default to use your solutions root directory as the source for where it can find your content, such as appsettings.json. If you have a solution structure that doesn't directly expose the root content to your solution file then you need to configure the Factory for it.
+The factory is configured by default to use your solutions root directory as the source for where it can find your content, such as appsettings.json. If you have a solution structure that doesn't directly expose the root content to your solution file then you need to configure the Factory for it. Microsoft outlines this [in their documentation](https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-2.2#how-the-test-infrastructure-infers-the-app-content-root-path). The `Microsoft.AspNetCore.TestHost` package needs to know where the root of your System Under Test (SUT) is at so it can load/discover content.
 
 ```c#
 this.testFactory = new ApiIntegrationTestFactory<Startup>()

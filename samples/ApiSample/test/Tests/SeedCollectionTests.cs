@@ -1,7 +1,6 @@
 using Bogus;
 using Janus.SampleApi.Data;
 using Janus.Seeding;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Newtonsoft.Json;
 using System.Linq;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 namespace Janus.SampleApi
 {
     [TestClass]
-    public class DataSeederTests
+    public class SeedCollectionTests
     {
         private ApiIntegrationTestFactory<Startup> testFactory;
 
@@ -38,8 +37,7 @@ namespace Janus.SampleApi
         {
             // Arrange
             this.testFactory.WithDataContext<AppDbContext>("Default")
-                .WithSeedData<UserEntitySeeder>()
-                .WithSeedData<TaskEntitySeeder>();
+                .WithSeedCollection<UserTaskCollection>();
 
             var client = testFactory.CreateClient();
             IEntitySeeder userSeeder = testFactory.GetDataContextSeedData<AppDbContext, UserEntitySeeder>();

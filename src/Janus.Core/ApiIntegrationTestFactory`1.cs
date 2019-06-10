@@ -21,7 +21,7 @@ namespace Janus
 
         private string solutionRelativeContentRoot = ".";
         private readonly string connectionStringDatabaseKey;
-        private List<TestDatabaseConfiguration> databaseConfigurations = new List<TestDatabaseConfiguration>();
+        private readonly List<TestDatabaseConfiguration> databaseConfigurations = new List<TestDatabaseConfiguration>();
 
         public ApiIntegrationTestFactory() : this(DefaultDatabaseKey)
         { }
@@ -71,12 +71,13 @@ namespace Janus
                 throw new ArgumentNullException(nameof(configurationConnectionStringKey), "You must provide the fully qualified IConfiguration Key used to discover the connection string value in the configuration system.");
             }
 
-            var dbConfig = new TestDatabaseConfiguration<TContext>(configurationConnectionStringKey, executingTest);
-
-            // If this specific DBContext can't use the Factory database key, then we use the DBContext specific key.
-            dbConfig.ConnectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
-                ? this.connectionStringDatabaseKey
-                : connectionStringDatabaseKey;
+            var dbConfig = new TestDatabaseConfiguration<TContext>(configurationConnectionStringKey, executingTest)
+            {
+                // If this specific DBContext can't use the Factory database key, then we use the DBContext specific key.
+                ConnectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
+                    ? this.connectionStringDatabaseKey
+                    : connectionStringDatabaseKey
+            };
 
             var seedBuilder = new DbContextSeedBuilder<TContext>(dbConfig);
             this.databaseConfigurations.Add(dbConfig);
@@ -221,7 +222,7 @@ namespace Janus
         private string ReplaceDatabaseNameOnConnectionString(string newDbName, string connectionString, string connectionStringDatabaseKey)
         {
             Dictionary<string, string> connectionStringParts = this.GetConnectionStringParts(connectionString);
-            if (!connectionStringParts.TryGetValue(connectionStringDatabaseKey, out string key))
+            if (!connectionStringParts.TryGetValue(connectionStringDatabaseKey, out _))
             {
                 throw new KeyNotFoundException($"The connection string database key of {connectionStringDatabaseKey} does not exist in the connection string.");
             }
