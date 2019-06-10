@@ -4,7 +4,7 @@
 
 ## Project Description
 
-HelloJanus is a simple database seeding API for seeding databases used with [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/). It is a NetStandard 2.0 library that can be used to provision a new database for all tests in a test-suite or for each individual test executed. Janus can be used to seed the database for your API integration tests, simplifying your API testing significantly.
+Janus is a simple database seeding API for seeding databases used with [Entity Framework Core](https://docs.microsoft.com/en-us/ef/core/). It is a NetStandard 2.0 library that can be used to provision a new database for all tests in a test-suite or for each individual test executed. Janus can be used to seed the database for your API integration tests, simplifying your API testing significantly.
 
 ## Download & Install
 
