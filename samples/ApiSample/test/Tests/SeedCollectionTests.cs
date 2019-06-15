@@ -47,7 +47,6 @@ namespace Janus.SampleApi
             string responseBody = await response.Content.ReadAsStringAsync();
             UserEntity[] responseData = JsonConvert.DeserializeObject<UserEntity[]>(responseBody);
 
-
             // Assert
             Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
             Assert.AreEqual(userSeeder.GetSeedData().Length, responseData.Length);

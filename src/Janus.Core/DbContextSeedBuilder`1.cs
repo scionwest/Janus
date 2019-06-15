@@ -19,5 +19,11 @@ namespace Janus
             base.TestConfiguration.RetainDatabase = true;
             return this;
         }
+
+        public DbContextSeedBuilder<TContext> UseConfiguredConnectionString()
+        {
+            base.TestConfiguration.UseConfigurationDatabase = true;
+            return this;
+        }
     }
 }
