@@ -5,7 +5,7 @@
     <AssemblyName>Janus</AssemblyName>
     <RootNamespace>Janus</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Johnathon Sullinger</Authors>
     <Company>Johnathon Sullinger</Company>
     <Description>Provides per-integration test database provisioning and database seeding for projects that utilize Entity Framework Core.</Description>
@@ -16,7 +16,7 @@
     <Title>Janus Database Seeder</Title>
     <Summary>Provides per-integration test database provisioning and database seeding for projects that utilize Entity Framework Core.</Summary>
     <PackageTags>efcore aspnetcore dataseeding testing integration-test</PackageTags>
-    <PackageReleaseNotes>Provides the initial set of APIs for seeding databases and seeding them for projects that utilize Entity Framework Core</PackageReleaseNotes>
+    <PackageReleaseNotes>Adds the ability for the Factory to utilize the connection string defined by the application's connection string, instead of generating a unique database per-test.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

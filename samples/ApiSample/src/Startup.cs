@@ -37,6 +37,7 @@ namespace Janus.SampleApi
             }
 
             app.UseMvc();
+            
         }
     }
 }

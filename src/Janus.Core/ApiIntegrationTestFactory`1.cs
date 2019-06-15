@@ -17,20 +17,14 @@ namespace Janus
 {
     public class ApiIntegrationTestFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
     {
-        private const string DefaultDatabaseKey = "Initial Catalog";
-
+        private readonly ContextManager contextManager;
         private string solutionRelativeContentRoot = ".";
-        private readonly string connectionStringDatabaseKey;
-        private readonly List<TestDatabaseConfiguration> databaseConfigurations = new List<TestDatabaseConfiguration>();
 
-        public ApiIntegrationTestFactory() : this(DefaultDatabaseKey)
-        { }
+        public ApiIntegrationTestFactory() : this(ContextManager.DefaultDatabaseKey) {}
 
         public ApiIntegrationTestFactory(string connectionStringDatabaseKey)
         {
-            this.connectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
-                ? DefaultDatabaseKey
-                : connectionStringDatabaseKey;
+            this.contextManager = new ContextManager(connectionStringDatabaseKey);
         }
 
         public ApiIntegrationTestFactory<TStartup> SetSolutionRelativeContentRoot(string contentRoot = ".")
@@ -41,47 +35,15 @@ namespace Janus
 
         public IEntitySeeder GetDataContextSeedData<TContext, TEntitySeeder>() where TContext : DbContext where TEntitySeeder : IEntitySeeder
         {
-            TestDatabaseConfiguration dbConfig = this.databaseConfigurations
-                .First(config => config.DbContextType == typeof(TContext));
-
-            if (dbConfig == null)
-            {
-                throw new InvalidOperationException($"The {typeof(TContext).FullName} DbContext is not registered with this factory instance. You can register it with {nameof(WithDataContext)}()");
-            }
-
-            IEntitySeeder entitySeeder = dbConfig.SeedBuilder
-                .GetEntitySeeders()
-                .FirstOrDefault(seeder => seeder.GetType() == typeof(TEntitySeeder));
-
-            if (entitySeeder == null)
-            {
-                throw new InvalidOperationException($"The {typeof(TEntitySeeder).FullName} has not been registered for the DbContext {typeof(TContext).FullName}. You need to add the seeder to the context registration for this Factory instance.");
-            }
-
-            return entitySeeder;
+            return this.contextManager.GetDataContextSeedData<TContext, TEntitySeeder>();
         }
 
         public DbContextSeedBuilder<TContext> WithDataContext<TContext>(string configurationConnectionStringKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
-            => this.WithDataContext<TContext>(configurationConnectionStringKey, this.connectionStringDatabaseKey, executingTest);
+            => this.contextManager.WithDataContext<TContext>(configurationConnectionStringKey, executingTest);
 
         public DbContextSeedBuilder<TContext> WithDataContext<TContext>(string configurationConnectionStringKey, string connectionStringDatabaseKey, [CallerMemberName] string executingTest = "") where TContext : DbContext
         {
-            if (string.IsNullOrEmpty(configurationConnectionStringKey))
-            {
-                throw new ArgumentNullException(nameof(configurationConnectionStringKey), "You must provide the fully qualified IConfiguration Key used to discover the connection string value in the configuration system.");
-            }
-
-            var dbConfig = new TestDatabaseConfiguration<TContext>(configurationConnectionStringKey, executingTest)
-            {
-                // If this specific DBContext can't use the Factory database key, then we use the DBContext specific key.
-                ConnectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
-                    ? this.connectionStringDatabaseKey
-                    : connectionStringDatabaseKey
-            };
-
-            var seedBuilder = new DbContextSeedBuilder<TContext>(dbConfig);
-            this.databaseConfigurations.Add(dbConfig);
-            return seedBuilder;
+            return this.contextManager.WithDataContext<TContext>(configurationConnectionStringKey, connectionStringDatabaseKey, executingTest);
         }
 
         protected override IWebHostBuilder CreateWebHostBuilder()
@@ -102,7 +64,7 @@ namespace Janus
 
         protected override void Dispose(bool disposing)
         {
-            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
+            foreach (TestDatabaseConfiguration dbConfig in this.contextManager.DatabaseConfigurations)
             {
                 if (dbConfig.RetainDatabase)
                 {
@@ -129,7 +91,7 @@ namespace Janus
 
         protected override TestServer CreateServer(IWebHostBuilder builder)
         {
-            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
+            foreach (TestDatabaseConfiguration dbConfig in this.contextManager.DatabaseConfigurations)
             {
                 if (dbConfig.UseConfigurationDatabase)
                 {
@@ -147,7 +109,7 @@ namespace Janus
 
         private void InitializeDatabase(TestServer server)
         {
-            foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
+            foreach (TestDatabaseConfiguration dbConfig in this.contextManager.DatabaseConfigurations)
             {
                 DbContext context;
                 using (IServiceScope serviceScope = server.Host.Services.CreateScope())
@@ -162,7 +124,7 @@ namespace Janus
                     }
 
                     this.CreateDatabase(dbConfig, context);
-                    this.SeedDatabase(server, dbConfig, context);
+                    this.contextManager.SeedDatabase(server.Host.Services, dbConfig, context);
                 }
             }
         }
@@ -170,18 +132,6 @@ namespace Janus
         protected virtual void CreateDatabase(TestDatabaseConfiguration configuration, DbContext context)
         {
             context.Database.EnsureCreated();
-        }
-
-        protected virtual void SeedDatabase(TestServer server, TestDatabaseConfiguration databaseConfiguration, DbContext dbContext)
-        {
-            // Resolve a context seeder and seed the database with the individual seeders
-            IDataContextSeeder contextSeeder = server.Host.Services.GetRequiredService<IDataContextSeeder>();
-            IEntitySeeder[] entitySeeders = databaseConfiguration.SeedBuilder.GetEntitySeeders();
-            contextSeeder.SeedDataContext(dbContext, entitySeeders);
-
-            // Always run the callback seeder last so that individual tests have the ability to replace data
-            // inserted via seeders.
-            databaseConfiguration.DatabaseSeeder?.DynamicInvoke(dbContext);
         }
 
         protected virtual void RenameConnectionStringDatabase(IWebHostBuilder hostBuilder, TestDatabaseConfiguration databaseConfiguration)
@@ -196,7 +146,7 @@ namespace Janus
                 }
 
                 string dbName = this.GetDatabaseNameFromConnectionString(connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
-                string newDbName = this.CreateDatabaseNameForTest(dbName);
+                string newDbName = this.CreateDatabaseNameForTest(dbName, databaseConfiguration);
                 connectionString = this.ReplaceDatabaseNameOnConnectionString(newDbName, connectionString, databaseConfiguration.ConnectionStringDatabaseKey);
                 string configKey = $"ConnectionStrings:{databaseConfiguration.ConfigurationConnectionStringKey}";
 
@@ -214,10 +164,10 @@ namespace Janus
             });
         }
 
-        protected virtual string CreateDatabaseNameForTest(string initialDatabaseName)
+        protected virtual string CreateDatabaseNameForTest(string initialDatabaseName, TestDatabaseConfiguration testDatabaseConfiguration)
         {
             string timeStamp = DateTime.Now.ToString("HHmmss.fff");
-            string newDbName = $"Tests-{initialDatabaseName}-{timeStamp}";
+            string newDbName = $"{initialDatabaseName}-{testDatabaseConfiguration.ExecutingTest}-{timeStamp}";
             return newDbName;
         }
 
