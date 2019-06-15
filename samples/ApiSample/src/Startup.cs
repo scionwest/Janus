@@ -26,6 +26,8 @@ namespace Janus.SampleApi
                 string connectionString = this.Configuration.GetConnectionString("Default");
                 options.UseSqlite(connectionString);
             });
+
+            services.AddDbContextSeeding();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -37,7 +39,7 @@ namespace Janus.SampleApi
             }
 
             app.UseMvc();
-            
+            app.ApplyDbContextSeeding("Data Source", manager => manager.WithDataContext<AppDbContext>("Default").WithSeedCollection<UserTaskCollection>());
         }
     }
 }

@@ -15,18 +15,13 @@ namespace Janus
                 throw new ArgumentNullException(nameof(configurationConnectionStringKey), "You must provide the fully qualified IConfiguration key, or a sub-key beneath the ConnectionStrings: Configuration Section.");
             }
 
-            if (dbContextType == null)
+            if (testName == null)
             {
-                throw new ArgumentNullException(nameof(dbContextType), "You can not provide a null DbContext Type.");
-            }
-
-            if (string.IsNullOrEmpty(testName))
-            {
-                throw new ArgumentNullException(nameof(testName), "You must specify the name of the test being executed for this configuration.");
+                testName = string.Empty;
             }
 
             this.ConfigurationConnectionStringKey = configurationConnectionStringKey;
-            this.DbContextType = dbContextType;
+            this.DbContextType = dbContextType ?? throw new ArgumentNullException(nameof(dbContextType), "You can not provide a null DbContext Type.");
             this.ExecutingTest = testName;
         }
 
