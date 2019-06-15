@@ -22,6 +22,10 @@ namespace Janus.SampleApi
             // Replace with "Initial Catalog" for Sql Server or "database" for MySql.
             this.testFactory = new ApiIntegrationTestFactory<Startup>("Data Source")
                 .SetSolutionRelativeContentRoot("samples\\ApiSample\\src");
+
+            this.testFactory
+                .WithDataContext<AppDbContext>("Default")
+                .WithSeedData<UserEntitySeeder>();
         }
 
         [TestCleanup]
@@ -35,8 +39,7 @@ namespace Janus.SampleApi
         [TestCategory("Samples")]
         public async Task GetUsers_ReturnsOkStatusCode()
         {
-            // Arrange - Sets up and creates the database.
-            this.testFactory.WithDataContext<AppDbContext>("Default");
+            // Arrange
             var client = this.testFactory.CreateClient();
 
             // Act

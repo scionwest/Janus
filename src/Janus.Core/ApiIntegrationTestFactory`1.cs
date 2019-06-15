@@ -109,6 +109,13 @@ namespace Janus
                     continue;
                 }
 
+                // These might be null in a suite of tests where some tests are configured with a Factory
+                // in a [TestInitialize] method and some have a Factory created within the test itself.
+                if (this.Server?.Host?.Services == null)
+                {
+                    continue;
+                }
+
                 DbContext context;
                 using (IServiceScope serviceScope = this.Server.Host.Services.CreateScope())
                 {
@@ -116,6 +123,7 @@ namespace Janus
                     context.Database.EnsureDeleted();
                 }
             }
+
             base.Dispose(disposing);
         }
 
@@ -123,6 +131,11 @@ namespace Janus
         {
             foreach (TestDatabaseConfiguration dbConfig in this.databaseConfigurations)
             {
+                if (dbConfig.UseConfigurationDatabase)
+                {
+                    continue;
+                }
+
                 this.RenameConnectionStringDatabase(builder, dbConfig);
             }
 

@@ -8,6 +8,8 @@
     <RootNamespace>AspNetCore.IntegrationTestSeeding</RootNamespace>
 
     <AssemblyName>AspNetCore.IntegrationTestSeeding.Tests</AssemblyName>
+
+    <UserSecretsId>4d21d38b-6acb-4e5a-bc97-d1f3852ddbaf</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
