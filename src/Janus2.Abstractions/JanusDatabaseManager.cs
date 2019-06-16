@@ -1,17 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Janus.Seeding;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 
 namespace Janus
 {
     public class JanusDatabaseManager : IDatabaseManager
     {
-        private List<IDatabaseBuilder> databaseBuilders = new List<IDatabaseBuilder>();
+        private Dictionary<Type, List<IDatabaseBuilder>> databaseBuilders = new Dictionary<Type, List<IDatabaseBuilder>>();
+        private readonly IDatabaseSeedFactory seedFactory;
+
+        public JanusDatabaseManager(IDatabaseSeedFactory seedFactory)
+        {
+            this.seedFactory = seedFactory;
+        }
 
         public void Reset()
         {
+            if (this.IsConfigured())
+            {
+                throw new InvalidOperationException("You can not reset a manager that has already been built. You must dispose of the manager and instantiate a new one.");
+            }
+
             this.databaseBuilders.Clear();
         }
 
@@ -23,83 +33,50 @@ namespace Janus
 
         public IDatabaseBuilder<TContext> ConfigureDatabase<TContext>() where TContext : DbContext
         {
-            var builderOptions = new DatabaseBuilderOptions();
-            IDatabaseBuilder<TContext> builder = new JanusDatabaseBuilder<TContext>(builderOptions);
+            return this.ConfigureDatabase<TContext>((initialName, context) =>
+            {
+                string timeStamp = DateTime.Now.ToString("HHmmss.fff");
+                return string.IsNullOrEmpty(context)
+                    ? $"{initialName}-{timeStamp}"
+                    : $"{initialName}-{context}-{timeStamp}";
+            });
+        }
 
-            this.databaseBuilders.Add(builder);
+        public IDatabaseBuilder<TContext> ConfigureDatabase<TContext>(Func<string, string, string> databaseNamefactory) where TContext : DbContext
+        {
+            Type contextType = typeof(TContext);
+            var builderOptions = new DatabaseBuilderOptions();
+            builderOptions.ConnectionStringOptions.DatabaseNameFactory = databaseNamefactory;
+
+            IDatabaseSeedReader seedReader = this.seedFactory.CreateSeedReader();
+            IDatabaseSeedWriter seedWriter = this.seedFactory.CreateSeedWriter();
+            IDatabaseBuilder<TContext> builder = this.seedFactory.CreateSeedBuilder<TContext>();
+
+            this.databaseBuilders[contextType].Add(builder);
             return builder;
         }
 
         public bool IsConfigured()
         {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class JanusDatabaseBuilder<TContext> : IDatabaseBuilder<TContext> where TContext : DbContext
-    {
-        private IDatabaseSeedBuilder<TContext> seedBuilder;
-
-        public JanusDatabaseBuilder(DatabaseBuilderOptions options) => this.Configuration = options;
-
-        public DatabaseBuilderOptions Configuration { get; }
-
-        public void Build()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDatabaseManager BuildDatabase()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Type GetDatabaseContextType() => typeof(TContext);
-
-        public IEntitySeeder[] GetSeeders()
-        {
-            return this.seedBuilder.RegisteredSeeders;
-        }
-
-        public IDatabaseSeedBuilder<TContext> SeedDatabase()
-        {
-            this.seedBuilder = new JanusDatabaseSeedBuilder<TContext>(this);
-            return this.seedBuilder;
-        }
-    }
-
-    public class JanusDatabaseSeedBuilder<TContext> : IDatabaseSeedBuilder<TContext> where TContext : DbContext
-    {
-        private IDatabaseBuilder<TContext> databaseBuilder;
-        private List<IEntitySeeder<TContext>> seeders = new List<IEntitySeeder<TContext>>();
-
-        public JanusDatabaseSeedBuilder(IDatabaseBuilder<TContext> databaseBuilder) => this.databaseBuilder = databaseBuilder;
-
-        public IEntitySeeder[] RegisteredSeeders => seeders.ToArray();
-
-        public IDatabaseManager BuildDatabase()
-        {
-            foreach(IEntitySeeder seeder in this.seeders)
+            foreach(IDatabaseBuilder databaseBuilder in this.databaseBuilders)
             {
-                seeder.Generate();
+                if (databaseBuilder.IsConfigured())
+                {
+                    continue;
+                }
+
+                return false;
             }
 
-            return this.databaseBuilder.BuildDatabase();
+            return true;
         }
 
-        public IDatabaseSeedBuilder<TContext> WithData(Action<TContext> entitySeeder)
+        public void Dispose()
         {
-            throw new NotImplementedException();
-        }
-
-        public IDatabaseSeedBuilder<TContext> WithSeeder<TSeeder>() where TSeeder : IEntitySeeder, new()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IDatabaseSeedBuilder<TContext> WithSeederCollection<TCollection>() where TCollection : IEntitySeederCollection
-        {
-            throw new NotImplementedException();
+            foreach(IDatabaseBuilder builder in this.databaseBuilders)
+            {
+                builder.Dispose();
+            }
         }
     }
 }

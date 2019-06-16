@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Janus;
+using Janus.Seeding;
+using Microsoft.AspNetCore.Builder;
 using System;
 
-namespace Janus
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class IApplicationBuilderExtensions
     {
