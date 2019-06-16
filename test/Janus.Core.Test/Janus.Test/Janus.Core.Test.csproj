@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Janus.Core\Janus.csproj" />
+    <ProjectReference Include="..\..\..\src\Janus.Core\Janus.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

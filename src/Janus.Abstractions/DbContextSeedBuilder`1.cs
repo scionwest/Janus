@@ -12,18 +12,5 @@ namespace Janus
             base.TestConfiguration.DatabaseSeeder = seeder;
             return this;
         }
-
-
-        public DbContextSeedBuilder<TContext> RetainDatabase()
-        {
-            base.TestConfiguration.RetainDatabase = true;
-            return this;
-        }
-
-        public DbContextSeedBuilder<TContext> UseConfiguredConnectionString()
-        {
-            base.TestConfiguration.UseConfigurationDatabase = true;
-            return this;
-        }
     }
 }

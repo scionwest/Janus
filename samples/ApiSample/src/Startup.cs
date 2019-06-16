@@ -27,7 +27,10 @@ namespace Janus.SampleApi
                 options.UseSqlite(connectionString);
             });
 
-            services.AddDbContextSeeding();
+            services.AddJanusDatabaseSeeding(options =>
+            {
+                options.DatabaseBehavior = DatabaseBehavior.ResetOnSeed;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -36,10 +39,23 @@ namespace Janus.SampleApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.ApplyJanusDatabase()
+                    .ConfigureAndSeedDatabase<AppDbContext>()
+                        .WithSeeder<User2EntitySeeder>()
+                        .WithData(context => context.Add(new UserEntity()))
+                        .BuildDatabase()
+                    .ConfigureAndSeedDatabase<AppDbContext>()
+                        .WithData(context => context.Add(new TaskEntity()))
+                        .BuildDatabase();
+                //app.ApplyJanusSeeding(manager =>
+                //{
+                //    manager.WithDataContext<AppDbContext>("Data Source")
+                //        .WithSeedCollection<UserTaskCollection>()
+                //        .AlwaysRefreshDatabase();
+                //});
             }
 
             app.UseMvc();
-            app.ApplyDbContextSeeding("Data Source", manager => manager.WithDataContext<AppDbContext>("Default").WithSeedCollection<UserTaskCollection>());
         }
     }
 }

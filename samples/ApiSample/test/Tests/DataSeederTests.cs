@@ -14,14 +14,14 @@ namespace Janus.SampleApi
     [TestClass]
     public class DataSeederTests
     {
-        private ApiIntegrationTestFactory<Startup> testFactory;
+        private JanusTestFactory<Startup> testFactory;
 
         [TestInitialize]
         public void Initialize()
         {
             // Sqlite connection string uses "Data Source".
             // Replace with "Initial Catalog" for Sql Server or "database" for MySql.
-            this.testFactory = new ApiIntegrationTestFactory<Startup>("Data Source")
+            this.testFactory = new JanusTestFactory<Startup>("Data Source")
                 .SetSolutionRelativeContentRoot("samples\\ApiSample\\src");
         }
 

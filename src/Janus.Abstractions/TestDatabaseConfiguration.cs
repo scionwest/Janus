@@ -5,7 +5,6 @@ namespace Janus
     public class TestDatabaseConfiguration
     {
         private bool useConfigurationConnectionString = false;
-        private bool? requestedRetainDatabase = null;
         private bool retainDatabase = false;
 
         public TestDatabaseConfiguration(string configurationConnectionStringKey, Type dbContextType, string testName)
@@ -25,15 +24,15 @@ namespace Janus
             this.ExecutingTest = testName;
         }
 
-        internal Type DbContextType { get; set; }
-        internal string ConfigurationConnectionStringKey { get; set; }
-        internal string ConnectionStringDatabaseKey { get; set; }
-        internal string ExecutingTest { get; set; }
-        internal Delegate DatabaseSeeder { get; set; }
-        internal DbContextSeedBuilder SeedBuilder { get; set; }
+        public bool GenerateFreshDatabase { get; internal set; }
+        public Type DbContextType { get; set; }
+        public string ConfigurationConnectionStringKey { get; set; }
+        public string ConnectionStringDatabaseKey { get; set; }
+        public string ExecutingTest { get; set; }
+        public Delegate DatabaseSeeder { get; set; }
+        public DbContextSeedBuilder SeedBuilder { get; set; }
 
-
-        internal bool RetainDatabase
+        public bool RetainDatabase
         {
             get
             {
@@ -50,7 +49,7 @@ namespace Janus
             }
         }
 
-        internal bool UseConfigurationDatabase
+        public bool UseConfigurationDatabase
         {
             get
             {

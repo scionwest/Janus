@@ -46,5 +46,23 @@ namespace Janus
             IEntitySeeder seeder = (IEntitySeeder)Activator.CreateInstance(seederType);
             this.registeredSeeders.Add(seederType, seeder);
         }
+
+        public DbContextSeedBuilder RetainDatabase()
+        {
+            this.TestConfiguration.RetainDatabase = true;
+            return this;
+        }
+
+        public DbContextSeedBuilder AlwaysRefreshDatabase()
+        {
+            this.TestConfiguration.GenerateFreshDatabase = true;
+            return this;
+        }
+
+        public DbContextSeedBuilder UseConfiguredConnectionString()
+        {
+            this.TestConfiguration.UseConfigurationDatabase = true;
+            return this;
+        }
     }
 }

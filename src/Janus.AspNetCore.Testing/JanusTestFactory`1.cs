@@ -13,21 +13,27 @@ using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Janus.Test")]
 
-namespace Janus
+namespace Janus.AspNetCore.Testing
 {
-    public class ApiIntegrationTestFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
+
+    public class JanusTestFactory<TStartup> : WebApplicationFactory<TStartup>, IJanusTestFactory where TStartup : class
     {
-        private readonly ContextManager contextManager;
+        private readonly IJanusManager contextManager;
         private string solutionRelativeContentRoot = ".";
 
-        public ApiIntegrationTestFactory() : this(ContextManager.DefaultDatabaseKey) {}
+        public JanusTestFactory() : this(new JanusContextOptions()) {}
 
-        public ApiIntegrationTestFactory(string connectionStringDatabaseKey)
+        public JanusTestFactory(JanusContextOptions options)
         {
-            this.contextManager = new ContextManager(connectionStringDatabaseKey);
+            this.contextManager = new ContextManager(options);
         }
 
-        public ApiIntegrationTestFactory<TStartup> SetSolutionRelativeContentRoot(string contentRoot = ".")
+        public JanusTestFactory(IJanusManager janusManager)
+        {
+            this.contextManager = janusManager;
+        }
+
+        public IJanusTestFactory SetSolutionRelativeContentRoot(string contentRoot = ".")
         {
             this.solutionRelativeContentRoot = contentRoot;
             return this;
@@ -102,17 +108,17 @@ namespace Janus
             }
 
             TestServer server = base.CreateServer(builder);
-            this.InitializeDatabase(server);
+            this.InitializeDatabase(server.Host.Services);
 
             return server;
         }
 
-        private void InitializeDatabase(TestServer server)
+        private void InitializeDatabase(IServiceProvider services)
         {
             foreach (TestDatabaseConfiguration dbConfig in this.contextManager.DatabaseConfigurations)
             {
                 DbContext context;
-                using (IServiceScope serviceScope = server.Host.Services.CreateScope())
+                using (IServiceScope serviceScope = services.CreateScope())
                 {
                     try
                     {
@@ -124,12 +130,12 @@ namespace Janus
                     }
 
                     this.CreateDatabase(dbConfig, context);
-                    this.contextManager.SeedDatabase(server.Host.Services, dbConfig, context);
+                    this.contextManager.SeedDatabase(services, dbConfig, context);
                 }
             }
         }
 
-        protected virtual void CreateDatabase(TestDatabaseConfiguration configuration, DbContext context)
+        protected  void CreateDatabase(TestDatabaseConfiguration configuration, DbContext context)
         {
             context.Database.EnsureCreated();
         }

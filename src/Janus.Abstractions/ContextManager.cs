@@ -4,24 +4,21 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Janus
 {
-    public class ContextManager
+    public class ContextManager : IJanusManager
     {
-        internal const string DefaultDatabaseKey = "Initial Catalog";
-
         private readonly string connectionStringDatabaseKey;
 
-        public ContextManager(string connectionStringDatabaseKey)
+        public ContextManager(JanusContextOptions options)
         {
-            this.connectionStringDatabaseKey = string.IsNullOrEmpty(connectionStringDatabaseKey)
-                ? DefaultDatabaseKey
-                : connectionStringDatabaseKey;
+            this.connectionStringDatabaseKey = string.IsNullOrEmpty(options.ConnectionStringDatabaseKey)
+                ? DbConnectionStringMeta.DefaultDatabaseKey
+                : options.ConnectionStringDatabaseKey;
         }
 
-        internal List<TestDatabaseConfiguration> DatabaseConfigurations { get; } = new List<TestDatabaseConfiguration>();
+        public List<TestDatabaseConfiguration> DatabaseConfigurations { get; } = new List<TestDatabaseConfiguration>();
 
         public IEntitySeeder GetDataContextSeedData<TContext, TEntitySeeder>() where TContext : DbContext where TEntitySeeder : IEntitySeeder
         {
@@ -68,7 +65,7 @@ namespace Janus
             return seedBuilder;
         }
 
-        internal virtual void SeedDatabase(IServiceProvider services, TestDatabaseConfiguration databaseConfiguration, DbContext dbContext)
+        public virtual void SeedDatabase(IServiceProvider services, TestDatabaseConfiguration databaseConfiguration, DbContext dbContext)
         {
             // Resolve a context seeder and seed the database with the individual seeders
             IDataContextSeeder contextSeeder = services.GetRequiredService<IDataContextSeeder>();
