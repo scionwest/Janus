@@ -8,17 +8,14 @@ namespace Janus
     public class JanusDatabaseSeedBuilder<TContext> : IDatabaseSeedBuilder<TContext> where TContext : DbContext
     {
         private IDatabaseBuilder<TContext> databaseBuilder;
-        private List<IEntitySeeder<TContext>> seeders = new List<IEntitySeeder<TContext>>();
         private readonly IDatabaseSeedReader seedReader;
-        private readonly IDatabaseSeedWriter seedWriter;
+        private List<IEntitySeeder<TContext>> seeders = new List<IEntitySeeder<TContext>>();
 
-        public JanusDatabaseSeedBuilder(IDatabaseSeedReader seedReader, IDatabaseSeedWriter seedWriter)
+        public JanusDatabaseSeedBuilder(IDatabaseBuilder<TContext> databaseBuilder, IDatabaseSeedReader seedReader)
         {
+            this.databaseBuilder = databaseBuilder;
             this.seedReader = seedReader;
-            this.seedWriter = seedWriter;
         }
-
-        public JanusDatabaseSeedBuilder(IDatabaseBuilder<TContext> databaseBuilder) => this.databaseBuilder = databaseBuilder;
 
         public IEntitySeeder[] RegisteredSeeders => seeders.ToArray();
 
@@ -28,7 +25,7 @@ namespace Janus
             {
                 seeder.Generate();
                 object[] seededEntities = seeder.GetSeedData();
-                this.seedWriter.WriteSeedToContext()
+                seeder.BuildRelationships(this.seedReader);
             }
 
             return this.databaseBuilder.BuildDatabase();

@@ -50,10 +50,10 @@ namespace Janus
 
             IDatabaseSeedReader seedReader = this.seedFactory.CreateSeedReader();
             IDatabaseSeedWriter seedWriter = this.seedFactory.CreateSeedWriter();
-            IDatabaseBuilder<TContext> builder = this.seedFactory.CreateSeedBuilder<TContext>();
+            var databaseBuilder = new JanusDatabaseBuilder<TContext>(builderOptions, seedReader, seedWriter);
 
-            this.databaseBuilders[contextType].Add(builder);
-            return builder;
+            this.databaseBuilders[contextType].Add(databaseBuilder);
+            return databaseBuilder;
         }
 
         public bool IsConfigured()

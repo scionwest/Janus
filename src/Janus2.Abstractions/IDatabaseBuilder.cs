@@ -8,7 +8,6 @@ namespace Janus
     {
         DatabaseBuilderOptions Configuration { get; }
         bool IsConfigured();
-
         Type GetDatabaseContextType();
         string GetDatabaseName(DatabaseNameKind nameKind);
 

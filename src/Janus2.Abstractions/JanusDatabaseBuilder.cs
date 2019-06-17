@@ -8,10 +8,14 @@ namespace Janus
     {
         private IDatabaseSeedBuilder<TContext> seedBuilder;
         private bool isDatabaseBuilt = false;
+        private readonly IDatabaseSeedReader seedReader;
+        private readonly IDatabaseSeedWriter seedWriter;
 
         public JanusDatabaseBuilder(DatabaseBuilderOptions options, IDatabaseSeedReader seedReader, IDatabaseSeedWriter seedWriter)
         {
             this.Configuration = options;
+            this.seedReader = seedReader;
+            this.seedWriter = seedWriter;
         }
 
         public DatabaseBuilderOptions Configuration { get; }
@@ -19,11 +23,6 @@ namespace Janus
         public bool IsConfigured()
         {
             return isDatabaseBuilt;
-        }
-
-        public void Build()
-        {
-            throw new NotImplementedException();
         }
 
         public IDatabaseManager BuildDatabase()
@@ -46,7 +45,8 @@ namespace Janus
 
         public IDatabaseSeedBuilder<TContext> SeedDatabase()
         {
-            this.seedBuilder = new JanusDatabaseSeedBuilder<TContext>(this);
+            IDatabaseSeedBuilder<TContext> databaseSeedBuilder = new JanusDatabaseSeedBuilder<TContext>(this, this.seedReader);
+
             return this.seedBuilder;
         }
 
