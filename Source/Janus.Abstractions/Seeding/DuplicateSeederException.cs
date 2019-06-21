@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Janus.EntityFramework
+namespace Janus.Seeding
 {
     [Serializable]
-    internal class DuplicateSeederException : Exception
+    public class DuplicateSeederException : Exception
     {
         public DuplicateSeederException()
         {

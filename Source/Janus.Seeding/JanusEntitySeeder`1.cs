@@ -8,6 +8,8 @@ namespace Janus.Seeding
     {
         public Type SeedType { get; } = typeof(TEntity);
 
+        public bool IsSeeded { get; private set; }
+
         public IList<TEntity> SeedData { get; private set; } = new List<TEntity>();
 
         public object[] GetSeedData()
@@ -29,6 +31,8 @@ namespace Janus.Seeding
         {
             var seedOptions = new JanusSeedOptions();
             this.SeedData = this.Seed(seedOptions);
+
+            this.IsSeeded = true;
         }
 
         public void ValidateSeedData(ISeedReader seedReader)
