@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace Janus.EntityFrameworkCore
 {
-    public class JanusDataContextSeeder : IDataContextSeeder
+    public class JanusDatabaseSeeder : IDatabaseSeeder
     {
         public void SeedDataContext<TDbContext>(TDbContext dbContext, ISeedManager seedManager)
         {

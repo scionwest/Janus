@@ -1,42 +1,28 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
 
 namespace Janus.EntityFrameworkCore
 {
-    public class JanusDatabaseBuilder<TContext> : IDatabaseBuilder<TContext> where TContext : DbContext
+    public class JanusDatabaseBuilder : IDatabaseBuilder
     {
-        private TContext dbContext;
+        private Dictionary<Type, DbContext> dbContexts = new Dictionary<Type, DbContext>();
 
-        public JanusDatabaseBuilder(string connectionString)
+        public void Build<TContext>(TContext context)
         {
-            this.ConnectionStringInfo = new DatabaseConnectionStringInfo(connectionString, new JanusConnectionStringOptions());
-            this.DbContextType = typeof(TContext);
-        }
+            if (this.dbContexts.TryGetValue(typeof(TContext), out DbContext existingContext))
+            {
+                throw new InvalidOperationException($"This Database Builder instance has already built {typeof(TContext).Name}.");
+            }
 
-        public JanusDatabaseBuilder(DatabaseConnectionStringInfo connectionStringInfo)
-        {
-            this.ConnectionStringInfo = connectionStringInfo;
-            this.DbContextType = typeof(TContext);
-        }
-
-        public Type DbContextType { get; }
-        public DatabaseConnectionStringInfo ConnectionStringInfo { get; private set; }
-
-        public void Build(TContext context)
-        {
-            this.dbContext = context;
-            context.Database.EnsureCreated();
+            var dbContext = context as DbContext ?? throw new InvalidDbContext(typeof(TContext));
+            dbContext.Database.EnsureCreated();
+            this.dbContexts.Add(typeof(TContext), dbContext);
         }
 
         public void Dispose()
         {
-            this.dbContext.Database.EnsureDeleted();
-        }
-
-        public IDatabaseBuilder<TContext> WithUseCase(string useCase)
-        {
-            this.ConnectionStringInfo = new DatabaseConnectionStringInfo(this.ConnectionStringInfo.ConnectionString, useCase, new JanusConnectionStringOptions());
-            return this;
+            this.dbContext?.Database?.EnsureDeleted();
         }
     }
 }

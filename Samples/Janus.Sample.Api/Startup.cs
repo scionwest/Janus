@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Janus.EntityFrameworkCore;
+using Janus.Seeding;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -14,10 +15,29 @@ using Microsoft.Extensions.Options;
 
 namespace WebApplication4
 {
-    public class AppContext : DbContext
+    public class FooEntity
     {
 
     }
+
+    public class FooSeeder : JanusEntitySeeder<FooEntity>
+    {
+        protected override bool MapEntities(FooEntity[] seededEntities, ISeedReader seedReader)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override IList<FooEntity> Seed(JanusSeedOptions options)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class AppContext : DbContext
+    {
+        public AppContext(DbContextOptions<AppContext> options) : base(options) { }
+    }
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -35,6 +55,14 @@ namespace WebApplication4
             services.AddDbContext<AppContext>(options =>
             {
                 options.UseInMemoryDatabase("TestDb");
+            });
+
+            services.AddJanus(options =>
+            {
+                options
+                    .AddDatabaseForContext<AppContext>(Configuration.GetConnectionString("Default"))
+                    .AddSeeding()
+                        .AddSeeder<FooSeeder>();
             });
         }
 

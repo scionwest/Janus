@@ -5,4 +5,8 @@
     <RootNamespace>Janus</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="2.2.4" />
+  </ItemGroup>
+
 </Project>

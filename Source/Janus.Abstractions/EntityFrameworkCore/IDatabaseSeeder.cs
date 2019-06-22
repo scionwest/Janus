@@ -2,7 +2,7 @@
 
 namespace Janus.EntityFrameworkCore
 {
-    public interface IDataContextSeeder
+    public interface IDatabaseSeeder
     {
         void SeedDataContext<TDbContext>(TDbContext context, ISeedManager seedManager);
         void SeedDataContext<TDbContext>(TDbContext context, IEntitySeeder entitySeeder);

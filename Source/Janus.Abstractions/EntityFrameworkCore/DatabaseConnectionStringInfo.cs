@@ -54,11 +54,12 @@ namespace Janus.EntityFrameworkCore
 
         private Dictionary<string, string> GetConnectionStringParts()
         {
-            Dictionary<string, string> parts = this.ConnectionString.Split(';')
-                .Select(element => element.Split(new char[] { '=' }, 2))
-                .ToDictionary(element => element[0].Trim(), element => element[1].Trim(), StringComparer.InvariantCultureIgnoreCase);
+            Dictionary<string, string> parts = this.ConnectionString
+                ?.Split(';')
+                ?.Select(element => element.Split(new char[] { '=' }, 2))
+                ?.ToDictionary(element => element[0].Trim(), element => element[1].Trim(), StringComparer.InvariantCultureIgnoreCase);
 
-            return parts;
+            return parts ?? new Dictionary<string, string>();
         }
     }
 }

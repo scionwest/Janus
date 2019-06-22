@@ -2,10 +2,9 @@
 
 namespace Janus.EntityFrameworkCore
 {
-    public interface IDatabaseBuilder<TContext> : IDisposable
+    public interface IDatabaseBuilder : IDisposable
     {
         Type DbContextType { get; }
-        DatabaseConnectionStringInfo ConnectionStringInfo { get; }
-        void Build(TContext context);
+        void Build<TContext>(TContext context);
     }
 }
