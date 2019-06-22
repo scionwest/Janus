@@ -43,6 +43,7 @@ namespace WebApplication4
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+            string con = configuration.GetConnectionString("Default");
         }
 
         public IConfiguration Configuration { get; }
@@ -54,15 +55,8 @@ namespace WebApplication4
 
             services.AddDbContext<AppContext>(options =>
             {
-                options.UseInMemoryDatabase("TestDb");
-            });
-
-            services.AddJanus(options =>
-            {
-                options
-                    .AddDatabaseForContext<AppContext>(Configuration.GetConnectionString("Default"))
-                    .AddSeeding()
-                        .AddSeeder<FooSeeder>();
+                string con = Configuration.GetConnectionString("Default");
+                options.UseInMemoryDatabase(con);
             });
         }
 

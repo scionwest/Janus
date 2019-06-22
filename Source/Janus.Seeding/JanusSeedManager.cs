@@ -7,6 +7,7 @@ namespace Janus.Seeding
     public class JanusSeedManager : ISeedManager
     {
         private readonly ISeedReaderFactory seedReaderFactory;
+
         protected Dictionary<Type, IEntitySeeder> RegisteredSeeders { get; } = new Dictionary<Type, IEntitySeeder>();
         protected IEntitySeeder[] EntitySeeders => this.RegisteredSeeders.Select(item => item.Value).ToArray();
 

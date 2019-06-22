@@ -5,10 +5,9 @@ namespace Janus.EntityFrameworkCore
     [Flags]
     public enum DatabaseBuildBehavior
     {
-        GenerateOnSeed = 1,
-        ResetOnSeed = 2,
+        UniquePerBuild = 1,
+        ResetOnBuild = 2,
         DeleteOnShutdown = 4,
-        UniqueDatabasePerSeed = 8,
-        AlwaysRetain = 16,
+        AlwaysRetain = 8,
     }
 }

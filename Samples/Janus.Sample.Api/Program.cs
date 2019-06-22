@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Janus.EntityFrameworkCore;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,11 @@ namespace WebApplication4
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseJanus(janusBuilder =>
+                {
+                    janusBuilder.BuildDatabases(dbBuilder => dbBuilder.Build<AppContext>())
+                        .BuildSeeding(seedManager => seedManager.UseSeeder<SeedCollection>());
+                })
                 .UseStartup<Startup>();
     }
 }

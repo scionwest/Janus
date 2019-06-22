@@ -15,14 +15,14 @@ namespace Janus.EntityFrameworkCore
                 throw new InvalidOperationException($"This Database Builder instance has already built {typeof(TContext).Name}.");
             }
 
-            var dbContext = context as DbContext ?? throw new InvalidDbContext(typeof(TContext));
-            dbContext.Database.EnsureCreated();
-            this.dbContexts.Add(typeof(TContext), dbContext);
+            existingContext = context as DbContext ?? throw new InvalidDbContext(typeof(TContext));
+            existingContext.Database.EnsureCreated();
+            this.dbContexts.Add(typeof(TContext), existingContext);
         }
 
         public void Dispose()
         {
-            this.dbContext?.Database?.EnsureDeleted();
+            //this.dbContext?.Database?.EnsureDeleted();
         }
     }
 }
