@@ -22,8 +22,14 @@ namespace WebApplication4
             WebHost.CreateDefaultBuilder(args)
                 .UseJanus(janusBuilder =>
                 {
-                    janusBuilder.BuildDatabases(dbBuilder => dbBuilder.Build<AppContext>())
-                        .BuildSeeding(seedManager => seedManager.UseSeeder<SeedCollection>());
+                    janusBuilder.BuildDatabases(dbBuilder =>
+                    {
+                        dbBuilder.AddContext<AppContext>(dbSetup =>
+                        {
+                            dbSetup.BuildBehavior = DatabaseBuildBehavior.ResetOnBuild;
+                            //dbSetup.ConnectionStringFactory = (info) => info.GetUniqueConnectionString();
+                        });
+                    });
                 })
                 .UseStartup<Startup>();
     }

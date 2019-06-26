@@ -4,20 +4,40 @@ using System.Collections.Generic;
 
 namespace Janus.EntityFrameworkCore
 {
+    internal class JanusDatabaseBuilderDelegate
+    {
+        internal Action<DatabaseBuilderSetup> SetupDelegate { get; set; }
+        internal DatabaseBuilderSetup DatabaseSetup { get; set; }
+    }
+
     public class JanusDatabaseBuilder : IDatabaseBuilder
     {
-        private Dictionary<Type, DbContext> dbContexts = new Dictionary<Type, DbContext>();
+        private List<JanusDatabaseBuilderDelegate> databaseSetups = new List<JanusDatabaseBuilderDelegate>();
 
-        public void Build<TContext>(TContext context)
+        public DatabaseBuildBehavior DefaultBehavior { get; set; }
+
+        public IDatabaseBuilder AddContext<TContext>(Action<DatabaseBuilderSetup> setupDelegate)
         {
-            if (this.dbContexts.TryGetValue(typeof(TContext), out DbContext existingContext))
+            Type dbContextType = typeof(TContext);
+            bool isDbContext = typeof(DbContext).IsAssignableFrom(dbContextType);
+            if (!isDbContext)
             {
-                throw new InvalidOperationException($"This Database Builder instance has already built {typeof(TContext).Name}.");
+                throw new InvalidDbContext(typeof(TContext));
             }
 
-            existingContext = context as DbContext ?? throw new InvalidDbContext(typeof(TContext));
-            existingContext.Database.EnsureCreated();
-            this.dbContexts.Add(typeof(TContext), existingContext);
+            var builderSetup = new DatabaseBuilderSetup(dbContextType);
+            var builderDelegate = new JanusDatabaseBuilderDelegate
+            {
+                DatabaseSetup = builderSetup,
+                SetupDelegate = setupDelegate,
+            };
+
+            return this;
+        }
+
+        public void Build()
+        {
+            throw new NotImplementedException();
         }
 
         public void Dispose()

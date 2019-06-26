@@ -1,5 +1,6 @@
 ﻿using Janus.EntityFrameworkCore;
 using Janus.Seeding;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,50 @@ using System.Linq;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    public static class IServiceCollectionExtensions
+    {
+        public static IServiceCollection AddJanus(this IServiceCollection services, Action<JanusBuilder> builderDelegate)
+        {
+            var janusBuilder = new JanusBuilder();
+            builderDelegate?.Invoke(janusBuilder);
+            services.AddSingleton<JanusBuilder>(_ => janusBuilder);
+
+            IConfiguration configuration = services.BuildServiceProvider().GetService<IConfiguration>();
+
+            if (janusBuilder.DatabaseBuilderConfiguration != null)
+            {
+                services.AddSingleton<IDatabaseSeeder, JanusDatabaseSeeder>();
+                services.AddSingleton<IDatabaseBuilder, JanusDatabaseBuilder>(provider =>
+                {
+                    JanusBuilder serviceBuilder = provider.GetService<JanusBuilder>();
+                    var databaseBuilder = new JanusDatabaseBuilder();
+                    serviceBuilder.DatabaseBuilderConfiguration?.Invoke(databaseBuilder);
+                    return databaseBuilder;
+                });
+
+                if (janusBuilder.ConnectionStringConfiguration == JanusBuilderConnectionStringConfiguration.WithConfigurationKey)
+                {
+                    string connectionString = configuration[janusBuilder.ConnectionStringConfigurationValue];
+                }
+            }
+
+            if (janusBuilder.SeedManagerConfiguration != null)
+            {
+                services.AddSingleton<ISeedManager, JanusSeedManager>(provider =>
+                {
+                    JanusBuilder serviceBuilder = provider.GetService<JanusBuilder>();
+                    ISeedReaderFactory seedReaderFactory = provider.GetService<ISeedReaderFactory>();
+
+                    var seedMaanger = new JanusSeedManager(seedReaderFactory);
+                    serviceBuilder.SeedManagerConfiguration?.Invoke(seedMaanger);
+                    return seedMaanger;
+                });
+                services.AddSingleton<ISeedReaderFactory, JanusSeedReaderFactory>();
+            }
+            return services;
+        }
+    }
+
     //public static class IServiceCollectionExtensions
     //{
     //    public static IServiceCollection AddJanus(this IServiceCollection services, Action<JanusBuilder> optionsBuilder)

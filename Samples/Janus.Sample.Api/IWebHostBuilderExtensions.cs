@@ -62,10 +62,26 @@ namespace Microsoft.AspNetCore
         }
     }
 
+    public enum JanusBuilderConnectionStringConfiguration
+    {
+        WithConfigurationKey = 1,
+        WithConnectionString = 2
+    }
+
     public class JanusBuilder
     {
         internal Action<IDatabaseBuilder> DatabaseBuilderConfiguration { get; private set; }
         internal Action<ISeedManager> SeedManagerConfiguration { get; private set; }
+        internal JanusBuilderConnectionStringConfiguration ConnectionStringConfiguration { get; private set; }
+        internal string ConnectionStringConfigurationValue { get; private set; }
+
+        public JanusBuilder WithConnectionStringConfiguration(JanusBuilderConnectionStringConfiguration connectionStringConfiguration, string configurationValue)
+        {
+            this.ConnectionStringConfiguration = connectionStringConfiguration;
+            this.ConnectionStringConfigurationValue = ConnectionStringConfigurationValue;
+            return this;
+        }
+
         public JanusBuilder BuildDatabases(Action<IDatabaseBuilder> databaseBuilderDelegate)
         {
             this.DatabaseBuilderConfiguration = databaseBuilderDelegate;
