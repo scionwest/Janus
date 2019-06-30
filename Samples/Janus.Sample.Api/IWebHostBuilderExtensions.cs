@@ -2,6 +2,7 @@
 using Janus.Seeding;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -9,9 +10,51 @@ using System.Collections.Generic;
 
 namespace Microsoft.AspNetCore
 {
+    public class JanusBuilder2
+    {
+        internal List<Action<IDatabaseBuilder>> databaseBuilderDelegates = new List<Action<IDatabaseBuilder>>();
+        internal List<Action<ISeedManager>> seedManagerDelegates = new List<Action<ISeedManager>>();
+
+        public JanusBuilder2 ConfigureDatabase(Action<IDatabaseBuilder> builderSetup)
+        {
+            this.databaseBuilderDelegates.Add(builderSetup);
+            return this;
+        }
+
+        public JanusBuilder2 ConfigureSeeding(Action<ISeedManager> seedManagerDelegate)
+        {
+            this.seedManagerDelegates.Add(seedManagerDelegate);
+            return this;
+        }
+    }
+
     public static class IWebHostBuilderExtensions
     {
-        public static IWebHostBuilder UseJanus(this IWebHostBuilder hostBuilder, Action<JanusBuilder> builderDelegate)
+        public static IWebHostBuilder UseJanus(this IWebHostBuilder hostBuilder, Action<JanusBuilder2> janusBuilder)
+        {
+            var builder = new JanusBuilder2();
+            janusBuilder.Invoke(builder);
+            hostBuilder.ConfigureServices((hostContext, services) => ConfigureJanusServices(builder, hostContext, services));
+            return hostBuilder;
+        }
+
+        public static void ConfigureJanusServices(JanusBuilder2 janusBuilder, WebHostBuilderContext hostBuilderContext, IServiceCollection services)
+        {
+            services.AddSingleton(janusBuilder);
+            services.AddTransient<IDatabaseBuilder, JanusDatabaseBuilder>(provider =>
+            {
+                var dbBuilder = new JanusDatabaseBuilder();
+                JanusBuilder2 jbuilder = provider.GetService<JanusBuilder2>();
+                foreach(Action<IDatabaseBuilder> dbDelegate in jbuilder.databaseBuilderDelegates)
+                {
+                    dbDelegate.Invoke(dbBuilder);
+                }
+
+                return dbBuilder;
+            });
+        }
+
+        public static IWebHostBuilder UseJanus2(this IWebHostBuilder hostBuilder, Action<JanusBuilder> builderDelegate)
         {
             var janusBuilder = new JanusBuilder();
             builderDelegate?.Invoke(janusBuilder);

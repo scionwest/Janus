@@ -22,6 +22,15 @@ namespace WebApplication4
             WebHost.CreateDefaultBuilder(args)
                 .UseJanus(janusBuilder =>
                 {
+                    janusBuilder.ConfigureDatabase(builder =>
+                    {
+                        builder.DefaultSetup.BuildBehavior = DatabaseBuildBehavior.DeleteOnShutdown;
+                        builder.AddContext<AppContext>(null);
+                    });
+                        
+                })
+                .UseJanus2(janusBuilder =>
+                {
                     janusBuilder.BuildDatabases(dbBuilder =>
                     {
                         dbBuilder.AddContext<AppContext>(dbSetup =>

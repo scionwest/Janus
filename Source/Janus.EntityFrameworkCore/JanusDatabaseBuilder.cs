@@ -4,19 +4,19 @@ using System.Collections.Generic;
 
 namespace Janus.EntityFrameworkCore
 {
-    internal class JanusDatabaseBuilderDelegate
-    {
-        internal Action<DatabaseBuilderSetup> SetupDelegate { get; set; }
-        internal DatabaseBuilderSetup DatabaseSetup { get; set; }
-    }
-
     public class JanusDatabaseBuilder : IDatabaseBuilder
     {
-        private List<JanusDatabaseBuilderDelegate> databaseSetups = new List<JanusDatabaseBuilderDelegate>();
+        private readonly IDatabaseSeeder databaseSeeder;
+        private List<DatabaseBuilderSetup> databaseBuilderSetups = new List<DatabaseBuilderSetup>();
 
-        public DatabaseBuildBehavior DefaultBehavior { get; set; }
+        public JanusDatabaseBuilder(IDatabaseSeeder databaseSeeder)
+        {
+            this.databaseSeeder = databaseSeeder;
+        }
 
-        public IDatabaseBuilder AddContext<TContext>(Action<DatabaseBuilderSetup> setupDelegate)
+        public DatabaseBuilderSetup DefaultSetup { get; set; }
+
+        public IDatabaseSeeder AddContext<TContext>(Action<DatabaseBuilderSetup> setupDelegate)
         {
             Type dbContextType = typeof(TContext);
             bool isDbContext = typeof(DbContext).IsAssignableFrom(dbContextType);
@@ -26,13 +26,8 @@ namespace Janus.EntityFrameworkCore
             }
 
             var builderSetup = new DatabaseBuilderSetup(dbContextType);
-            var builderDelegate = new JanusDatabaseBuilderDelegate
-            {
-                DatabaseSetup = builderSetup,
-                SetupDelegate = setupDelegate,
-            };
-
-            return this;
+            setupDelegate.Invoke(builderSetup);
+            return this.databaseSeeder;
         }
 
         public void Build()

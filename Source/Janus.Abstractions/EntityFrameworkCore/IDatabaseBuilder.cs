@@ -4,7 +4,7 @@ namespace Janus.EntityFrameworkCore
 {
     public interface IDatabaseBuilder : IDisposable
     {
-        DatabaseBuildBehavior DefaultBehavior { get; set; }
+        DatabaseBuilderSetup DefaultSetup { get; }
 
         /// <summary>
         /// Builds all registered DbContexts
@@ -12,7 +12,7 @@ namespace Janus.EntityFrameworkCore
         void Build();
 
         // Builds a given instance of DbContext
-        IDatabaseBuilder AddContext<TContext>(Action<DatabaseBuilderSetup> setupDelegate);
+        IDatabaseSeeder AddContext<TContext>(Action<DatabaseBuilderSetup> setupDelegate);
     }
 
     public class DatabaseBuilderSetup
@@ -24,12 +24,11 @@ namespace Janus.EntityFrameworkCore
 
         public Type DbContextType { get; }
 
-        public string ConnectionString { get; set; }
-
         public string ConnectionStringKey { get; set; }
 
-        public DatabaseBuildBehavior BuildBehavior { get; set; }
+        public Func<string, string> ConnectionStringFormatter { get; set; }
 
+        public DatabaseBuildBehavior BuildBehavior { get; set; } = DatabaseBuildBehavior.AlwaysRetain;
 
     }
 }
